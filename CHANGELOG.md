@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `install.sh`: on an idempotent re-run (upgrade), the service is
+  now **restarted** explicitly instead of relying on
+  `systemctl --user enable --now`. `--now` is a no-op on an
+  already-active service, so after `git pull && ./install.sh`
+  the file on disk was correctly replaced but the Python process
+  in RAM kept running the previous version until the next login
+  or a manual restart. Reproduced live via SSH on a user PC
+  showing stale PID + stale behaviour; after the fix a single
+  `./install.sh` is enough to pick up both new binary and new
+  behaviour.
 - `radio-scrobbler`: parse ICY titles in the form `ARTIST-TITLE`
   (bare hyphen, no surrounding spaces) when `xesam:artist` is
   empty. Previously only `" - "` (space-hyphen-space) was tried

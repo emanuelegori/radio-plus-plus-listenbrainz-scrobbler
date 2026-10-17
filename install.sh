@@ -140,7 +140,12 @@ fi
 info "$(t 'Enabling systemd user service...' \
      'Abilitazione del servizio systemd utente...')"
 systemctl --user daemon-reload
-systemctl --user enable --now radio-scrobbler.service
+systemctl --user enable radio-scrobbler.service >/dev/null
+# restart (not just enable --now): on an upgrade the service is already
+# running the OLD binary; `enable --now` on an active service is a no-op,
+# so without an explicit restart the process in RAM keeps executing the
+# previous version even though the file on disk has been overwritten.
+systemctl --user restart radio-scrobbler.service
 sleep 1
 if systemctl --user --no-pager --quiet is-active radio-scrobbler.service; then
     ok "$(t 'radio-scrobbler.service is active.' \
