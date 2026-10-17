@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `radio-scrobbler`: parse ICY titles in the form `ARTIST-TITLE`
+  (bare hyphen, no surrounding spaces) when `xesam:artist` is
+  empty. Previously only `" - "` (space-hyphen-space) was tried
+  as a fallback separator, so stations that broadcast metadata
+  like `ALESSANDRA AMOROSO-MEZZO ROTTO (FEAT. BIGMAMA)` or
+  `STADIO-UN DISPERATO BISOGNO D'AMORE` ended up with an empty
+  artist and were filtered out by `require_separator`. The
+  fallback now tries, in order of specificity, `" - "`, `" – "`,
+  `" — "`, then the bare `-` / `–` / `—`, so the first match
+  wins and spaced separators keep priority (e.g. `JAY-Z - 99
+  Problems` is still split as `JAY-Z` / `99 Problems`, not
+  `JAY` / `Z - 99 Problems`).
+
 ### Added
 
 - `install.sh` and `uninstall.sh`: bilingual output. The installer

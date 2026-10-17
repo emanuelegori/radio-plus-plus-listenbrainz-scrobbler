@@ -131,10 +131,16 @@ def read_mpris(cfg):
     stations = effective_stations(cfg)
     artist = strip_stations(artist, stations)
     title = strip_stations(title, stations)
-    if not artist and " - " in title:
-        artist, title = [p.strip() for p in title.split(" - ", 1)]
-        artist = strip_stations(artist, stations)
-        title = strip_stations(title, stations)
+    if not artist:
+        for sep in (" - ", " – ", " — ", "-", "–", "—"):
+            if sep in title:
+                left, right = title.split(sep, 1)
+                left, right = left.strip(), right.strip()
+                if left and right:
+                    artist, title = left, right
+                    artist = strip_stations(artist, stations)
+                    title = strip_stations(title, stations)
+                    break
     return artist, title
 
 
