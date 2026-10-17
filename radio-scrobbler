@@ -12,7 +12,7 @@ from pathlib import Path
 
 import requests
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Emanuele Gori"
 __license__ = "GPL-3.0-or-later"
 __repo_forgejo__ = "https://git.emanuelegori.uno/emanuelegori/radio-plus-plus-listenbrainz-scrobbler"

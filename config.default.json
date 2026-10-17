@@ -5,7 +5,7 @@
   "min_title_length": 3,
   "require_separator": true,
   "mb_min_score": 90,
-  "user_agent": "radio-scrobbler/1.0.0 (+https://git.emanuelegori.uno/emanuelegori/radio-plus-plus-listenbrainz-scrobbler)",
+  "user_agent": "radio-scrobbler/1.1.0 (+https://git.emanuelegori.uno/emanuelegori/radio-plus-plus-listenbrainz-scrobbler)",
   "use_applet_stations": true,
   "blacklist_substrings": [
     "pubblicit",
