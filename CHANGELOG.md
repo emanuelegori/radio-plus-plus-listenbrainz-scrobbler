@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   service is already running, that the cloned folder is no longer
   needed (with the ready-to-run `cd ~ && rm -rf` command including
   the actual path), that all commands work from any terminal, and
-  how to fix a "command not found" if `~/.local/bin` is not yet on
-  `PATH`.
+  how to fix a "command not found" (`cd ~` and retry, or open a new
+  terminal).
 
 ## [1.0.0] - 2026-10-17
 

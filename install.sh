@@ -136,6 +136,5 @@ echo
 echo "Config:  $CFG_FILE"
 echo "Log:     $HOME/.cache/radio-scrobbler/scrobbler.log"
 echo
-echo "If 'radio-scrobbler --version' returns 'command not found', open"
-echo "a new terminal (or run: source ~/.profile) so that ~/.local/bin"
-echo "is on PATH."
+echo "If 'radio-scrobbler --version' returns 'command not found',"
+echo "run 'cd ~' and retry (or open a new terminal)."

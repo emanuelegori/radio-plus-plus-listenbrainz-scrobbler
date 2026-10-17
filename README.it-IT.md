@@ -91,9 +91,9 @@ cd ~ && rm -rf radio-plus-plus-listenbrainz-scrobbler
 Tutti i comandi riportati sotto (`radio-scrobbler`, `journalctl`,
 `systemctl --user`) funzionano da **qualunque terminale, in
 qualunque directory**: `~/.local/bin` e gia nel `PATH` sui profili
-standard Debian/Ubuntu. Se dopo l'installazione `radio-scrobbler
---version` risponde "command not found", apri un nuovo terminale
-(oppure esegui `source ~/.profile`) e riprova.
+standard Debian/Ubuntu. Se subito dopo l'installazione
+`radio-scrobbler --version` risponde "command not found", esegui
+`cd ~` e riprova (oppure apri un nuovo terminale).
 
 ## Aggiornamento
 

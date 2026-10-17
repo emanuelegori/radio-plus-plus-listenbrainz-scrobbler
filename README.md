@@ -83,8 +83,8 @@ cd ~ && rm -rf radio-plus-plus-listenbrainz-scrobbler
 All the commands shown below (`radio-scrobbler`, `journalctl`,
 `systemctl --user`) work from **any terminal, in any directory**:
 `~/.local/bin` is in your `PATH` on standard Debian/Ubuntu profiles.
-If `radio-scrobbler --version` is "command not found" after install,
-open a new terminal (or run `source ~/.profile`) and retry.
+If `radio-scrobbler --version` is "command not found" right after
+install, run `cd ~` and try again (or open a new terminal).
 
 ## Update
 
