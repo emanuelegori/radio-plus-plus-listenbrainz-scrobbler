@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- README: clarified how the installer handles missing packages
+  (shows the list, asks for confirmation, then runs
+  `sudo apt-get install -y`).
+- README: rewrote the "favourite station name" tip with a concrete,
+  worked example showing why the saved name must match the ICY
+  broadcast; added fallback via `station_names` config entry.
+
 ## [1.0.0] - 2026-10-17
 
 ### Added

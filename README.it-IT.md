@@ -55,12 +55,17 @@ L'installer esegue:
 
 1. Verifica di `apt-get`, Cinnamon, applet Radio++ e relativa
    configurazione.
-2. Proposta di installare i pacchetti mancanti con `sudo apt-get`
-   (`playerctl`, `python3-requests`).
+2. Rileva eventuali pacchetti mancanti fra `playerctl` e
+   `python3-requests`. Se ne trova, mostra l'elenco e chiede
+   conferma; rispondendo `Y` esegue
+   `sudo apt-get update && sudo apt-get install -y ...` (ti verra
+   chiesta la password sudo). Se rispondi `n`, l'installer si ferma.
 3. Copia di `radio-scrobbler` in `~/.local/bin/` e del servizio in
    `~/.config/systemd/user/`.
-4. Creazione di `~/.config/radio-scrobbler/config.json` dal template se
-   non presente e richiesta del token ListenBrainz con input nascosto.
+4. Creazione di `~/.config/radio-scrobbler/config.json` dal template
+   se non presente e richiesta del token ListenBrainz con input
+   nascosto (i caratteri non vengono mostrati, il token viene
+   scritto direttamente nel JSON con `chmod 600`).
 5. `systemctl --user daemon-reload` ed `enable --now`.
 
 ## Disinstallazione
@@ -122,14 +127,39 @@ systemctl --user restart radio-scrobbler
 
 ## Consigli pratici
 
-**Il nome della preferita deve coincidere con lo StreamTitle ICY.**
-Se una stazione invia `Radio Fantasia - Artista - Titolo` ma nelle
-preferite dell'applet l'hai salvata come `Fantasia`, lo scrobbler non
-riconoscera il nome stazione e `Radio Fantasia` finira come "artista".
-Rinomina la preferita in Radio++ in modo da far coincidere il nome con
-cio che la stazione annuncia davvero (per esempio `Radio Fantasia`). Lo
-scrobbler se ne accorge in automatico al poll successivo, senza
-riavvii.
+**I nomi delle preferite servono a ripulire lo StreamTitle.**
+Lo scrobbler legge l'elenco dei nomi delle tue preferite in Radio++ e
+li usa per rimuovere il nome della stazione dallo `StreamTitle` ICY
+prima di inviare l'ascolto. Il confronto e esatto (ma
+case-insensitive): se nelle preferite il nome salvato e `Fantasia`,
+viene rimossa solo esattamente la stringa `Fantasia` quando compare
+accanto a un separatore comune (`-`, `|`, `:`, ...).
+
+Significa che il nome della preferita deve coincidere con quello che la
+stazione annuncia davvero nei metadati, altrimenti il nome stazione
+sfugge al filtro e finisce come artista. Caso reale, concreto:
+
+- Lo stream invia: `Italia Dance Music Radio - Stay with me in the network`
+- Nelle preferite la stazione e salvata come: `Italia Dance Music`
+- Lo scrobbler cerca `Italia Dance Music` subito seguito da un
+  separatore, non lo trova (nello stream dopo `Italia Dance Music` c'e
+  ` Radio -`), **non** rimuove nulla, divide sul primo ` - ` e invia:
+    - artista = `Italia Dance Music Radio`
+    - titolo  = `Stay with me in the network`
+
+Rimedio: apri le impostazioni di Radio++, rinomina la preferita da
+`Italia Dance Music` a `Italia Dance Music Radio`. Lo scrobbler
+ricarica l'elenco in automatico entro un poll (10 s), nessun riavvio
+necessario.
+
+Se la rinomina non e possibile (per stazioni che ascolti al volo
+senza salvarle), aggiungi il nome a `station_names` nel tuo config:
+
+```json
+"station_names": ["Italia Dance Music Radio"]
+```
+
+Poi: `systemctl --user restart radio-scrobbler`.
 
 **Le stazioni dance (e in generale gli stream HLS) spesso non sono
 scrobblabili.**

@@ -49,12 +49,17 @@ cd radio-plus-plus-listenbrainz-scrobbler
 The installer:
 
 1. Checks `apt-get`, Cinnamon, Radio++ applet and its config.
-2. Offers to `sudo apt-get install` missing packages (`playerctl`,
-   `python3-requests`).
+2. Detects missing packages among `playerctl` and `python3-requests`.
+   If any are missing it shows a list and asks for confirmation; on
+   `Y` it runs `sudo apt-get update && sudo apt-get install -y ...`
+   (you will be prompted for your sudo password). If you reply `n`
+   the installer aborts.
 3. Copies `radio-scrobbler` to `~/.local/bin/` and the service unit to
    `~/.config/systemd/user/`.
 4. Creates `~/.config/radio-scrobbler/config.json` from the template if
-   missing and asks for the ListenBrainz token with hidden input.
+   missing and asks for the ListenBrainz token with hidden input
+   (characters not echoed; the token is written straight into the
+   JSON with `chmod 600`).
 5. Runs `systemctl --user daemon-reload` and `enable --now`.
 
 ## Uninstall
@@ -116,13 +121,39 @@ systemctl --user restart radio-scrobbler
 
 ## Tips & tricks
 
-**Favourite station name must match the ICY StreamTitle.**
-If a station sends `Awesome Radio - Artist - Title` but the favourite is
-saved as just `Awesome` in the applet, the station name will not be
-stripped and `Awesome Radio` will end up as the "artist". Rename the
-favourite in Radio++ so the saved name matches what the stream actually
-sends (for example `Awesome Radio`). The scrobbler will pick up the
-change automatically at the next poll.
+**Favourite names in the applet are used to clean the StreamTitle.**
+The scrobbler reads the list of your Radio++ favourite names and uses
+them to remove the station name from the ICY `StreamTitle` before
+submitting the listen. The match is exact (case-insensitive): if the
+saved name in Radio++ is `Awesome`, only the literal string `Awesome`
+is stripped, surrounded by a common separator (`-`, `|`, `:`, ...).
+
+That means the favourite name must match what the stream actually
+broadcasts, otherwise the station name slips through and ends up as
+the artist. Concrete real-world case:
+
+- Stream sends: `Italia Dance Music Radio - Stay with me in the network`
+- Favourite in applet is named: `Italia Dance Music`
+- The scrobbler looks for `Italia Dance Music` immediately followed by
+  a separator, does not find it (the stream has `Italia Dance Music`
+  followed by ` Radio -`), does **not** strip anything, splits on the
+  first ` - ` and submits:
+    - artist = `Italia Dance Music Radio`
+    - title  = `Stay with me in the network`
+
+Fix: open Radio++ settings, rename the favourite from
+`Italia Dance Music` to `Italia Dance Music Radio`. The scrobbler
+reloads the list automatically within one poll (10 s), no restart
+required.
+
+If renaming is not an option (for stations you only tune in on the fly
+without saving), add the name to `station_names` in your config:
+
+```json
+"station_names": ["Italia Dance Music Radio"]
+```
+
+Then: `systemctl --user restart radio-scrobbler`.
 
 **Dance / HLS stations are mostly not scrobblable.**
 Many dance stations distribute via HLS (`.m3u8`) and either do not
