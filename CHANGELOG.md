@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `journalctl --user`, `systemctl --user`) work from any terminal
   thanks to `~/.local/bin` being on the default Debian/Ubuntu
   `PATH`.
+- README: added an "Update" section explaining that `install.sh` is
+  idempotent (skips installed packages, overwrites binary/unit,
+  preserves config and token, restarts the service).
 
 ## [1.0.0] - 2026-10-17
 

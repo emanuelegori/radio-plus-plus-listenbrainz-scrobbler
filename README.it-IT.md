@@ -95,6 +95,32 @@ standard Debian/Ubuntu. Se dopo l'installazione `radio-scrobbler
 --version` risponde "command not found", apri un nuovo terminale
 (oppure esegui `source ~/.profile`) e riprova.
 
+## Aggiornamento
+
+L'installer e **idempotente**: lo si rilancia per aggiornare
+un'installazione gia esistente. In quel caso:
+
+- I pacchetti gia installati vengono saltati (nessun prompt
+  `sudo`).
+- `~/.local/bin/radio-scrobbler` e il service unit vengono
+  sovrascritti con le nuove versioni.
+- `~/.config/radio-scrobbler/config.json` viene **preservato**: il
+  tuo token e le tue personalizzazioni restano intatti, il token
+  **non** viene richiesto di nuovo.
+- systemd viene ricaricato e il service riparte con il nuovo
+  binario.
+
+Se hai conservato la cartella clonata:
+
+```bash
+cd radio-plus-plus-listenbrainz-scrobbler
+git pull
+./install.sh
+```
+
+Se l'avevi eliminata, ribasta riclonare ed eseguire `install.sh`
+sopra l'installazione esistente, senza alcun effetto collaterale.
+
 ## Disinstallazione
 
 ```bash

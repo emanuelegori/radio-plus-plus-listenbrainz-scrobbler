@@ -86,6 +86,29 @@ All the commands shown below (`radio-scrobbler`, `journalctl`,
 If `radio-scrobbler --version` is "command not found" after install,
 open a new terminal (or run `source ~/.profile`) and retry.
 
+## Update
+
+The installer is **idempotent**: run it again to upgrade an existing
+installation. It will:
+
+- Skip packages that are already installed (no `sudo` prompt).
+- Overwrite `~/.local/bin/radio-scrobbler` and the service unit with
+  the new versions.
+- **Preserve** `~/.config/radio-scrobbler/config.json` as-is: your
+  token and your tweaks are kept, the token is **not** asked again.
+- Reload systemd and (re)start the service with the new binary.
+
+If you kept the cloned folder:
+
+```bash
+cd radio-plus-plus-listenbrainz-scrobbler
+git pull
+./install.sh
+```
+
+If you had removed the clone, just clone again and run `install.sh`
+on top of the existing installation; nothing bad happens.
+
 ## Uninstall
 
 ```bash
