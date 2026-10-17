@@ -225,30 +225,81 @@ def empty_state():
     }
 
 
+def _systemctl_user(verb):
+    try:
+        out = subprocess.run(
+            ["systemctl", "--user", verb, "radio-scrobbler.service"],
+            capture_output=True, text=True, timeout=3
+        )
+        return out.stdout.strip() or out.stderr.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return "unknown"
+
+
 def check():
-    print(f"Config path: {CONFIG_PATH}")
-    print(f"  exists:  {CONFIG_PATH.exists()}")
+    print(f"radio-scrobbler {__version__}")
+    print("=" * 48)
+
+    print("\n[Service]")
+    active = _systemctl_user("is-active")
+    enabled = _systemctl_user("is-enabled")
+    print(f"  Active:   {active}")
+    print(f"  Enabled:  {enabled}  (autostart at login: "
+          f"{'yes' if enabled == 'enabled' else 'no'})")
+
+    print("\n[Config]")
+    print(f"  Path:     {CONFIG_PATH}")
+    print(f"  Exists:   {'yes' if CONFIG_PATH.exists() else 'NO'}")
     if CONFIG_PATH.exists():
-        cfg = json.loads(CONFIG_PATH.read_text())
-        print(f"  token:   {'set' if cfg.get('listenbrainz_token') else 'MISSING'}")
-    print(f"Applet config: {APPLET_CONFIG}")
-    print(f"  exists:  {APPLET_CONFIG.exists()}")
+        try:
+            cfg = json.loads(CONFIG_PATH.read_text())
+            print(f"  Token:    {'set' if cfg.get('listenbrainz_token') else 'MISSING'}")
+        except Exception as e:
+            print(f"  Token:    unreadable ({e})")
+
+    print("\n[Applet]")
+    print(f"  Path:     {APPLET_CONFIG}")
+    print(f"  Exists:   {'yes' if APPLET_CONFIG.exists() else 'NO'}")
     if APPLET_CONFIG.exists():
-        d = json.loads(APPLET_CONFIG.read_text())
-        tree = d.get("tree", {}).get("value", []) or []
-        print(f"  stations: {len(tree)}")
+        try:
+            d = json.loads(APPLET_CONFIG.read_text())
+            tree = d.get("tree", {}).get("value", []) or []
+            print(f"  Stations: {len(tree)}")
+        except Exception as e:
+            print(f"  Stations: unreadable ({e})")
+
+    print("\n[MPRIS mpv]")
     try:
         out = subprocess.run(
             ["playerctl", "--player=mpv", "metadata",
-             "--format", "{{artist}}\t{{title}}\t{{status}}"],
+             "--format", "{{status}}\t{{artist}}\t{{title}}"],
             capture_output=True, text=True, timeout=3
         )
-        if out.returncode == 0:
-            print(f"MPRIS mpv: {out.stdout.strip() or '(empty)'}")
+        if out.returncode == 0 and out.stdout.strip():
+            parts = out.stdout.strip().split("\t")
+            if len(parts) == 3:
+                status, artist, title = parts
+                print(f"  Status:   {status}")
+                print(f"  Artist:   {artist or '(empty)'}")
+                print(f"  Title:    {title or '(empty)'}")
+            else:
+                print(f"  Raw:      {out.stdout.strip()}")
         else:
-            print("MPRIS mpv: not running")
+            print("  Status:   mpv not running (no station playing)")
     except FileNotFoundError:
-        print("MPRIS mpv: playerctl not installed")
+        print("  Status:   playerctl not installed")
+
+    print("\n[Log]")
+    print(f"  Path:     {LOG_PATH}")
+    print(f"  Exists:   {'yes' if LOG_PATH.exists() else 'NO'}")
+
+    print("\n[Commands]")
+    print("  systemctl --user status  radio-scrobbler")
+    print("  systemctl --user start   radio-scrobbler")
+    print("  systemctl --user stop    radio-scrobbler")
+    print("  systemctl --user restart radio-scrobbler")
+    print("  journalctl --user -u radio-scrobbler -f")
+    print()
 
 
 def run():

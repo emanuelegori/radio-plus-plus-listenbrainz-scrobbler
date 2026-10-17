@@ -118,20 +118,29 @@ systemctl --user --no-pager --quiet is-active radio-scrobbler.service \
     || warn "Service not active yet. Check: journalctl --user -u radio-scrobbler -n 30"
 
 echo
-ok "Install done. The service is already running."
+ok "Install done."
 echo
-echo "You can close this terminal, or 'cd' anywhere else: the folder"
-echo "you cloned into (\"$(basename "$SCRIPT_DIR")\") is no longer needed."
-echo "Keep it only if you plan to run './uninstall.sh' or 'git pull'"
-echo "for future updates; otherwise 'cd ~ && rm -rf \"$SCRIPT_DIR\"' is safe."
+echo "The radio-scrobbler service is ACTIVE and will auto-start at every"
+echo "login from now on. Nothing else to do: press play on a station in"
+echo "Radio++ and the scrobbler will submit listens to ListenBrainz once"
+echo "the stability threshold is reached."
+echo
+echo "Keep the folder \"$(basename "$SCRIPT_DIR")\": it is used for"
+echo "'./uninstall.sh' and for 'git pull && ./install.sh' to update."
+echo "You do NOT need to delete it."
 echo
 echo "All the commands below work from ANY terminal, in ANY directory:"
 echo
-echo "  radio-scrobbler --about"
-echo "  radio-scrobbler --check"
-echo "  journalctl --user -u radio-scrobbler -f"
-echo "  systemctl --user status radio-scrobbler"
+echo "  radio-scrobbler --about       # author, license, repo links"
+echo "  radio-scrobbler --version"
+echo "  radio-scrobbler --check       # service + config + MPRIS diagnostics"
+echo
+echo "  systemctl --user status  radio-scrobbler"
+echo "  systemctl --user start   radio-scrobbler"
+echo "  systemctl --user stop    radio-scrobbler"
 echo "  systemctl --user restart radio-scrobbler"
+echo
+echo "  journalctl --user -u radio-scrobbler -f   # follow live logs"
 echo
 echo "Config:  $CFG_FILE"
 echo "Log:     $HOME/.cache/radio-scrobbler/scrobbler.log"

@@ -8,28 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `install.sh`: rewrote the final shell message. Now states clearly
+  that the service is ACTIVE and will auto-start at every login,
+  recommends **keeping** the cloned folder (needed for
+  `./uninstall.sh` and `git pull && ./install.sh`), removed the
+  previous "safe to delete" hint which contradicted the uninstall
+  flow, and lists the full set of systemd user commands
+  (`status`, `start`, `stop`, `restart`) in addition to
+  `journalctl -f` and the `radio-scrobbler --*` CLI.
+- `radio-scrobbler --check`: restructured output in readable
+  sections (`[Service]`, `[Config]`, `[Applet]`, `[MPRIS mpv]`,
+  `[Log]`, `[Commands]`), added systemd `is-active` /
+  `is-enabled` status so a glance tells whether the service is
+  running and whether autostart is wired up.
+- README (en/it): "After install" now says the service is already
+  active and auto-starts at login, and that the cloned folder
+  must be kept (used by uninstall and update). "Usage" lists the
+  full systemctl set (status/start/stop/restart) aligned with the
+  installer output.
 - README: clarified how the installer handles missing packages
   (shows the list, asks for confirmation, then runs
   `sudo apt-get install -y`).
 - README: rewrote the "favourite station name" tip with a concrete,
   worked example showing why the saved name must match the ICY
   broadcast; added fallback via `station_names` config entry.
-- README: added an "After install" section stating that the service
-  starts immediately (`enable --now`), that the cloned folder can be
-  deleted afterwards (keeping it only for `uninstall.sh` / `git pull`),
-  and that all post-install commands (`radio-scrobbler`,
-  `journalctl --user`, `systemctl --user`) work from any terminal
-  thanks to `~/.local/bin` being on the default Debian/Ubuntu
-  `PATH`.
 - README: added an "Update" section explaining that `install.sh` is
   idempotent (skips installed packages, overwrites binary/unit,
   preserves config and token, restarts the service).
-- `install.sh`: expanded the final message. Explicitly states that the
-  service is already running, that the cloned folder is no longer
-  needed (with the ready-to-run `cd ~ && rm -rf` command including
-  the actual path), that all commands work from any terminal, and
-  how to fix a "command not found" (`cd ~` and retry, or open a new
-  terminal).
 
 ## [1.0.0] - 2026-10-17
 

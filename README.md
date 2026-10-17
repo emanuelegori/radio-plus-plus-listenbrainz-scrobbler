@@ -66,19 +66,19 @@ The installer:
 
 ### After install
 
-The cloned folder is **no longer needed**. All runtime files have
-been copied under your home:
+The service is **already active** and will auto-start at every
+login from now on. There is nothing else to do: press play on a
+station in Radio++ and the scrobbler will submit listens to
+ListenBrainz once the stability threshold is reached.
+
+Runtime files copied under your home:
 
 - `~/.local/bin/radio-scrobbler`
 - `~/.config/systemd/user/radio-scrobbler.service`
 - `~/.config/radio-scrobbler/config.json`
 
-You can safely delete the cloned repo (keep it only if you want to
-run `./uninstall.sh` or `git pull` for updates later):
-
-```bash
-cd ~ && rm -rf radio-plus-plus-listenbrainz-scrobbler
-```
+**Keep the cloned folder.** It is used by `./uninstall.sh` and by
+`git pull && ./install.sh` to update. There is no need to delete it.
 
 All the commands shown below (`radio-scrobbler`, `journalctl`,
 `systemctl --user`) work from **any terminal, in any directory**:
@@ -126,12 +126,12 @@ directory):
 ```bash
 radio-scrobbler --about     # author, license, repository links
 radio-scrobbler --version
-radio-scrobbler --check     # config and MPRIS diagnostics
+radio-scrobbler --check     # service + config + MPRIS diagnostics
 
-systemctl --user status radio-scrobbler    # current state
+systemctl --user status  radio-scrobbler   # current state (active/inactive)
+systemctl --user start   radio-scrobbler   # start the service
+systemctl --user stop    radio-scrobbler   # stop the service
 systemctl --user restart radio-scrobbler   # apply config changes
-systemctl --user stop radio-scrobbler
-systemctl --user start radio-scrobbler
 ```
 
 Start the applet, press play on any station and follow the logs

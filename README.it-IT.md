@@ -73,20 +73,20 @@ L'installer esegue:
 
 ### Dopo l'installazione
 
-La cartella clonata **non serve piu**. Tutti i file di esecuzione
-sono stati copiati sotto la tua home:
+Il servizio e **gia attivo** e verra avviato automaticamente a ogni
+login. Non devi fare altro: premi play su una stazione in Radio++
+e lo scrobbler inviera gli ascolti a ListenBrainz al raggiungimento
+della soglia di stabilita.
+
+File di esecuzione copiati sotto la tua home:
 
 - `~/.local/bin/radio-scrobbler`
 - `~/.config/systemd/user/radio-scrobbler.service`
 - `~/.config/radio-scrobbler/config.json`
 
-Puoi eliminare tranquillamente la cartella clonata (tienila solo se
-in futuro vuoi usare `./uninstall.sh` oppure fare `git pull` per gli
-aggiornamenti):
-
-```bash
-cd ~ && rm -rf radio-plus-plus-listenbrainz-scrobbler
-```
+**Tieni la cartella clonata.** Serve per `./uninstall.sh` e per
+aggiornare con `git pull && ./install.sh`. Non e necessario
+eliminarla.
 
 Tutti i comandi riportati sotto (`radio-scrobbler`, `journalctl`,
 `systemctl --user`) funzionano da **qualunque terminale, in
@@ -138,12 +138,12 @@ spostarsi in alcuna directory):
 ```bash
 radio-scrobbler --about     # autore, licenza, link ai repo
 radio-scrobbler --version
-radio-scrobbler --check     # diagnostica configurazione e MPRIS
+radio-scrobbler --check     # diagnostica service, configurazione, MPRIS
 
-systemctl --user status radio-scrobbler    # stato attuale
-systemctl --user restart radio-scrobbler   # applica modifiche config
-systemctl --user stop radio-scrobbler
-systemctl --user start radio-scrobbler
+systemctl --user status  radio-scrobbler   # stato attuale (active/inactive)
+systemctl --user start   radio-scrobbler   # avvia il servizio
+systemctl --user stop    radio-scrobbler   # ferma il servizio
+systemctl --user restart radio-scrobbler   # applica modifiche al config
 ```
 
 Avvia l'applet, premi play su una stazione e segui i log (anche
