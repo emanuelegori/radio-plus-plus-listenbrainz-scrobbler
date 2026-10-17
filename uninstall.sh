@@ -12,23 +12,33 @@ info() { echo "${CYA}[info]${RST} $*"; }
 ok()   { echo "${GRN}[ ok ]${RST} $*"; }
 warn() { echo "${YLW}[warn]${RST} $*"; }
 
-info "Stopping and disabling service..."
-systemctl --user disable --now radio-scrobbler.service 2>/dev/null || warn "Service was not active."
+_lang="${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}"
+if [[ "$_lang" == it* ]]; then LOCALE="it"; else LOCALE="en"; fi
+t() { if [ "$LOCALE" = "it" ]; then echo "$2"; else echo "$1"; fi; }
+
+info "$(t 'Stopping and disabling service...' \
+     'Arresto e disabilitazione del servizio...')"
+systemctl --user disable --now radio-scrobbler.service 2>/dev/null || \
+    warn "$(t 'Service was not active.' 'Il servizio non era attivo.')"
 rm -f "$SVC_FILE"
 systemctl --user daemon-reload
-ok "Service unit removed."
+ok "$(t 'Service unit removed.' 'Unit del servizio rimosso.')"
 
 rm -f "$BIN_FILE" "$LEGACY_BIN"
-ok "Script(s) removed."
+ok "$(t 'Script(s) removed.' 'Script rimossi.')"
 
 echo
-read -r -p "Remove config ($CFG_DIR) and log cache ($CACHE_DIR) too? [y/N] " ans
+read -r -p "$(t \
+    "Remove config ($CFG_DIR) and log cache ($CACHE_DIR) too? [y/N] " \
+    "Rimuovere anche il config ($CFG_DIR) e la cache dei log ($CACHE_DIR)? [y/N] ")" ans
 if [[ "${ans:-N}" =~ ^[Yy] ]]; then
     rm -rf "$CFG_DIR" "$CACHE_DIR"
-    ok "Config and cache removed."
+    ok "$(t 'Config and cache removed.' 'Config e cache rimossi.')"
 else
-    info "Config and cache preserved. Delete manually with: rm -rf '$CFG_DIR' '$CACHE_DIR'"
+    info "$(t \
+        "Config and cache preserved. Delete manually with: rm -rf '$CFG_DIR' '$CACHE_DIR'" \
+        "Config e cache preservati. Eliminali a mano con: rm -rf '$CFG_DIR' '$CACHE_DIR'")"
 fi
 
 echo
-ok "Uninstall done."
+ok "$(t 'Uninstall done.' 'Disinstallazione completata.')"

@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `install.sh` and `uninstall.sh`: bilingual output. The installer
+  auto-detects the user locale via `LC_ALL` / `LC_MESSAGES` / `LANG`
+  and prints Italian when the locale begins with `it`, English
+  otherwise (default). All status messages, prompts, errors and
+  the final post-install summary are localised. No new dependency.
+
 ### Changed
 
 - `install.sh`: rewrote the final shell message. Now states clearly

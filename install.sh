@@ -15,30 +15,44 @@ ok()   { echo "${GRN}[ ok ]${RST} $*"; }
 warn() { echo "${YLW}[warn]${RST} $*"; }
 die()  { echo "${RED}[fail]${RST} $*" >&2; exit 1; }
 
-info "Checking prerequisites..."
+_lang="${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}"
+if [[ "$_lang" == it* ]]; then LOCALE="it"; else LOCALE="en"; fi
+t() { if [ "$LOCALE" = "it" ]; then echo "$2"; else echo "$1"; fi; }
 
-command -v apt-get >/dev/null 2>&1 || die "apt-get not found: this installer targets Debian/Ubuntu-based distros."
+info "$(t 'Checking prerequisites...' 'Verifica dei prerequisiti...')"
+
+command -v apt-get >/dev/null 2>&1 || die "$(t \
+    'apt-get not found: this installer targets Debian/Ubuntu-based distros.' \
+    'apt-get non trovato: questo installer è per distribuzioni Debian/Ubuntu.')"
 
 if [ -r /etc/os-release ]; then
     . /etc/os-release
-    ok "Distro: ${PRETTY_NAME:-unknown}"
+    ok "$(t "Distro: ${PRETTY_NAME:-unknown}" "Distribuzione: ${PRETTY_NAME:-sconosciuta}")"
 fi
 
-[ -d /usr/share/cinnamon ] || warn "Cinnamon not detected in /usr/share/cinnamon. The service will still install but may not autostart without a Cinnamon session."
+[ -d /usr/share/cinnamon ] || warn "$(t \
+    'Cinnamon not detected in /usr/share/cinnamon. The service will still install but may not autostart without a Cinnamon session.' \
+    'Cinnamon non rilevato in /usr/share/cinnamon. Il servizio verrà comunque installato ma potrebbe non partire in automatico senza una sessione Cinnamon.')"
 
 APPLET_LOCAL="$HOME/.local/share/cinnamon/applets/radio@driglu4it"
 APPLET_SYS="/usr/share/cinnamon/applets/radio@driglu4it"
 if [ -d "$APPLET_LOCAL" ] || [ -d "$APPLET_SYS" ]; then
-    ok "Radio++ applet (radio@driglu4it) found."
+    ok "$(t 'Radio++ applet (radio@driglu4it) found.' \
+         'Applet Radio++ (radio@driglu4it) trovata.')"
 else
-    die "Radio++ applet not found. Install it from Cinnamon Spices before running this installer."
+    die "$(t \
+        'Radio++ applet not found. Install it from Cinnamon Spices before running this installer.' \
+        'Applet Radio++ non trovata. Installala da Cinnamon Spices prima di eseguire questo installer.')"
 fi
 
 APPLET_CFG="$HOME/.config/cinnamon/spices/radio@driglu4it/radio@driglu4it.json"
 if [ -f "$APPLET_CFG" ]; then
-    ok "Applet config present: $APPLET_CFG"
+    ok "$(t "Applet config present: $APPLET_CFG" \
+         "Config applet presente: $APPLET_CFG")"
 else
-    warn "Applet config not yet created. Open Radio++ settings once and add at least one station."
+    warn "$(t \
+        'Applet config not yet created. Open Radio++ settings once and add at least one station.' \
+        'Config applet non ancora creato. Apri le impostazioni di Radio++ e aggiungi almeno una stazione.')"
 fi
 
 missing=()
@@ -47,37 +61,42 @@ if ! command -v python3 >/dev/null 2>&1; then missing+=(python3); fi
 if ! python3 -c 'import requests' >/dev/null 2>&1; then missing+=(python3-requests); fi
 
 if [ ${#missing[@]} -gt 0 ]; then
-    warn "Missing packages: ${missing[*]}"
-    read -r -p "Install them with sudo apt-get? [Y/n] " ans
+    warn "$(t "Missing packages: ${missing[*]}" "Pacchetti mancanti: ${missing[*]}")"
+    read -r -p "$(t 'Install them with sudo apt-get? [Y/n] ' 'Installarli con sudo apt-get? [Y/n] ')" ans
     if [[ "${ans:-Y}" =~ ^[Nn] ]]; then
-        die "Required packages missing. Aborting."
+        die "$(t 'Required packages missing. Aborting.' \
+             'Pacchetti richiesti mancanti. Installazione annullata.')"
     fi
     sudo apt-get update
     sudo apt-get install -y "${missing[@]}"
-    ok "Packages installed."
+    ok "$(t 'Packages installed.' 'Pacchetti installati.')"
 else
-    ok "Required packages already present (playerctl, python3-requests)."
+    ok "$(t 'Required packages already present (playerctl, python3-requests).' \
+         'Pacchetti richiesti già presenti (playerctl, python3-requests).')"
 fi
 
-systemctl --user is-system-running >/dev/null 2>&1 || warn "systemd --user is not fully running. The service will be enabled anyway and should start at next login."
+systemctl --user is-system-running >/dev/null 2>&1 || warn "$(t \
+    'systemd --user is not fully running. The service will be enabled anyway and should start at next login.' \
+    'systemd --user non è completamente attivo. Il servizio verrà comunque abilitato e dovrebbe partire al prossimo login.')"
 
-info "Installing files..."
+info "$(t 'Installing files...' 'Installazione dei file...')"
 mkdir -p "$BIN_DIR" "$SVC_DIR" "$CFG_DIR"
 install -m 755 "$SCRIPT_DIR/radio-scrobbler" "$BIN_FILE"
 install -m 644 "$SCRIPT_DIR/radio-scrobbler.service" "$SVC_FILE"
-ok "Script:  $BIN_FILE"
-ok "Service: $SVC_FILE"
+ok "$(t "Script:  $BIN_FILE" "Script:   $BIN_FILE")"
+ok "$(t "Service: $SVC_FILE" "Servizio: $SVC_FILE")"
 
 if [ -f "$BIN_DIR/radio-listenbrainz-scrobbler.py" ]; then
-    warn "Legacy script found: removing $BIN_DIR/radio-listenbrainz-scrobbler.py"
+    warn "$(t "Legacy script found: removing $BIN_DIR/radio-listenbrainz-scrobbler.py" \
+         "Script legacy trovato: rimozione di $BIN_DIR/radio-listenbrainz-scrobbler.py")"
     rm -f "$BIN_DIR/radio-listenbrainz-scrobbler.py"
 fi
 
 if [ ! -f "$CFG_FILE" ]; then
     install -m 600 "$SCRIPT_DIR/config.default.json" "$CFG_FILE"
-    ok "Config created: $CFG_FILE"
+    ok "$(t "Config created: $CFG_FILE" "Config creato: $CFG_FILE")"
 else
-    ok "Config kept: $CFG_FILE"
+    ok "$(t "Config kept: $CFG_FILE" "Config esistente mantenuto: $CFG_FILE")"
 fi
 
 TOKEN_PRESENT=$(python3 -c "
@@ -91,11 +110,18 @@ except Exception:
 
 if [ "$TOKEN_PRESENT" != "1" ]; then
     echo
-    info "ListenBrainz user token required."
-    info "Get it from: https://listenbrainz.org/settings/   (field: User token)"
-    read -r -s -p "Paste your token (hidden input): " token
+    if [ "$LOCALE" = "it" ]; then
+        info "Serve il token utente di ListenBrainz."
+        info "Ottienilo da: https://listenbrainz.org/settings/   (campo: User token)"
+        read -r -s -p "Incolla il tuo token (input nascosto): " token
+    else
+        info "ListenBrainz user token required."
+        info "Get it from: https://listenbrainz.org/settings/   (field: User token)"
+        read -r -s -p "Paste your token (hidden input): " token
+    fi
     echo
-    [ -n "$token" ] || die "Empty token. Aborting."
+    [ -n "$token" ] || die "$(t 'Empty token. Aborting.' \
+         'Token vuoto. Installazione annullata.')"
     LB_TOKEN="$token" CFG="$CFG_FILE" python3 - <<'PY'
 import json, os
 p = os.environ["CFG"]
@@ -104,46 +130,89 @@ d["listenbrainz_token"] = os.environ["LB_TOKEN"]
 json.dump(d, open(p, "w"), indent=2, ensure_ascii=False)
 PY
     chmod 600 "$CFG_FILE"
-    ok "Token saved to $CFG_FILE (chmod 600)."
+    ok "$(t "Token saved to $CFG_FILE (chmod 600)." \
+         "Token salvato in $CFG_FILE (chmod 600).")"
 else
-    ok "Token already present in config, keeping it."
+    ok "$(t 'Token already present in config, keeping it.' \
+         'Token già presente nel config, lo mantengo.')"
 fi
 
-info "Enabling systemd user service..."
+info "$(t 'Enabling systemd user service...' \
+     'Abilitazione del servizio systemd utente...')"
 systemctl --user daemon-reload
 systemctl --user enable --now radio-scrobbler.service
 sleep 1
-systemctl --user --no-pager --quiet is-active radio-scrobbler.service \
-    && ok "radio-scrobbler.service is active." \
-    || warn "Service not active yet. Check: journalctl --user -u radio-scrobbler -n 30"
+if systemctl --user --no-pager --quiet is-active radio-scrobbler.service; then
+    ok "$(t 'radio-scrobbler.service is active.' \
+         'radio-scrobbler.service è attivo.')"
+else
+    warn "$(t 'Service not active yet. Check: journalctl --user -u radio-scrobbler -n 30' \
+         'Servizio non ancora attivo. Verifica con: journalctl --user -u radio-scrobbler -n 30')"
+fi
 
 echo
-ok "Install done."
+ok "$(t 'Install done.' 'Installazione completata.')"
 echo
-echo "The radio-scrobbler service is ACTIVE and will auto-start at every"
-echo "login from now on. Nothing else to do: press play on a station in"
-echo "Radio++ and the scrobbler will submit listens to ListenBrainz once"
-echo "the stability threshold is reached."
-echo
-echo "Keep the folder \"$(basename "$SCRIPT_DIR")\": it is used for"
-echo "'./uninstall.sh' and for 'git pull && ./install.sh' to update."
-echo "You do NOT need to delete it."
-echo
-echo "All the commands below work from ANY terminal, in ANY directory:"
-echo
-echo "  radio-scrobbler --about       # author, license, repo links"
-echo "  radio-scrobbler --version"
-echo "  radio-scrobbler --check       # service + config + MPRIS diagnostics"
-echo
-echo "  systemctl --user status  radio-scrobbler"
-echo "  systemctl --user start   radio-scrobbler"
-echo "  systemctl --user stop    radio-scrobbler"
-echo "  systemctl --user restart radio-scrobbler"
-echo
-echo "  journalctl --user -u radio-scrobbler -f   # follow live logs"
-echo
-echo "Config:  $CFG_FILE"
-echo "Log:     $HOME/.cache/radio-scrobbler/scrobbler.log"
-echo
-echo "If 'radio-scrobbler --version' returns 'command not found',"
-echo "run 'cd ~' and retry (or open a new terminal)."
+
+if [ "$LOCALE" = "it" ]; then
+    cat <<EOF
+Il servizio radio-scrobbler è ATTIVO e verrà avviato automaticamente a
+ogni login. Non devi fare altro: premi play su una stazione in Radio++
+e lo scrobbler invierà gli ascolti a ListenBrainz al raggiungimento
+della soglia di stabilità.
+
+Tieni la cartella "$(basename "$SCRIPT_DIR")": serve per
+'./uninstall.sh' e per 'git pull && ./install.sh' per aggiornare.
+Non è necessario eliminarla.
+
+Tutti i comandi qui sotto funzionano da QUALUNQUE terminale, in
+QUALUNQUE directory:
+
+  radio-scrobbler --about       # autore, licenza, link ai repo
+  radio-scrobbler --version
+  radio-scrobbler --check       # diagnostica service + config + MPRIS
+
+  systemctl --user status  radio-scrobbler
+  systemctl --user start   radio-scrobbler
+  systemctl --user stop    radio-scrobbler
+  systemctl --user restart radio-scrobbler
+
+  journalctl --user -u radio-scrobbler -f   # segui i log in diretta
+
+Config: $CFG_FILE
+Log:    $HOME/.cache/radio-scrobbler/scrobbler.log
+
+Se 'radio-scrobbler --version' risponde 'command not found',
+esegui 'cd ~' e riprova (oppure apri un nuovo terminale).
+EOF
+else
+    cat <<EOF
+The radio-scrobbler service is ACTIVE and will auto-start at every
+login from now on. Nothing else to do: press play on a station in
+Radio++ and the scrobbler will submit listens to ListenBrainz once
+the stability threshold is reached.
+
+Keep the folder "$(basename "$SCRIPT_DIR")": it is used for
+'./uninstall.sh' and for 'git pull && ./install.sh' to update.
+You do NOT need to delete it.
+
+All the commands below work from ANY terminal, in ANY directory:
+
+  radio-scrobbler --about       # author, license, repo links
+  radio-scrobbler --version
+  radio-scrobbler --check       # service + config + MPRIS diagnostics
+
+  systemctl --user status  radio-scrobbler
+  systemctl --user start   radio-scrobbler
+  systemctl --user stop    radio-scrobbler
+  systemctl --user restart radio-scrobbler
+
+  journalctl --user -u radio-scrobbler -f   # follow live logs
+
+Config: $CFG_FILE
+Log:    $HOME/.cache/radio-scrobbler/scrobbler.log
+
+If 'radio-scrobbler --version' returns 'command not found',
+run 'cd ~' and retry (or open a new terminal).
+EOF
+fi
