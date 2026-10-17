@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README: rewrote the "favourite station name" tip with a concrete,
   worked example showing why the saved name must match the ICY
   broadcast; added fallback via `station_names` config entry.
+- README: added an "After install" section stating that the service
+  starts immediately (`enable --now`), that the cloned folder can be
+  deleted afterwards (keeping it only for `uninstall.sh` / `git pull`),
+  and that all post-install commands (`radio-scrobbler`,
+  `journalctl --user`, `systemctl --user`) work from any terminal
+  thanks to `~/.local/bin` being on the default Debian/Ubuntu
+  `PATH`.
 
 ## [1.0.0] - 2026-10-17
 

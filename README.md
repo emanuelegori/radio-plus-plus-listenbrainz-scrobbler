@@ -60,7 +60,31 @@ The installer:
    missing and asks for the ListenBrainz token with hidden input
    (characters not echoed; the token is written straight into the
    JSON with `chmod 600`).
-5. Runs `systemctl --user daemon-reload` and `enable --now`.
+5. Runs `systemctl --user daemon-reload` and `enable --now
+   radio-scrobbler.service`: the scrobbler starts immediately and
+   will auto-start at every login from now on. No reboot needed.
+
+### After install
+
+The cloned folder is **no longer needed**. All runtime files have
+been copied under your home:
+
+- `~/.local/bin/radio-scrobbler`
+- `~/.config/systemd/user/radio-scrobbler.service`
+- `~/.config/radio-scrobbler/config.json`
+
+You can safely delete the cloned repo (keep it only if you want to
+run `./uninstall.sh` or `git pull` for updates later):
+
+```bash
+cd ~ && rm -rf radio-plus-plus-listenbrainz-scrobbler
+```
+
+All the commands shown below (`radio-scrobbler`, `journalctl`,
+`systemctl --user`) work from **any terminal, in any directory**:
+`~/.local/bin` is in your `PATH` on standard Debian/Ubuntu profiles.
+If `radio-scrobbler --version` is "command not found" after install,
+open a new terminal (or run `source ~/.profile`) and retry.
 
 ## Uninstall
 
@@ -73,13 +97,22 @@ whether to also remove the config and log directories.
 
 ## Usage
 
+All commands run from **any terminal** (no need to `cd` into any
+directory):
+
 ```bash
 radio-scrobbler --about     # author, license, repository links
 radio-scrobbler --version
 radio-scrobbler --check     # config and MPRIS diagnostics
+
+systemctl --user status radio-scrobbler    # current state
+systemctl --user restart radio-scrobbler   # apply config changes
+systemctl --user stop radio-scrobbler
+systemctl --user start radio-scrobbler
 ```
 
-Start the applet, press play on any station and follow the logs:
+Start the applet, press play on any station and follow the logs
+(again, from any terminal):
 
 ```bash
 journalctl --user -u radio-scrobbler -f

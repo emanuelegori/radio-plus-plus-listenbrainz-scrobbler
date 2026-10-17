@@ -66,7 +66,34 @@ L'installer esegue:
    se non presente e richiesta del token ListenBrainz con input
    nascosto (i caratteri non vengono mostrati, il token viene
    scritto direttamente nel JSON con `chmod 600`).
-5. `systemctl --user daemon-reload` ed `enable --now`.
+5. `systemctl --user daemon-reload` ed `enable --now
+   radio-scrobbler.service`: lo scrobbler parte subito ed e
+   configurato per avviarsi automaticamente a ogni login. Non serve
+   riavviare il sistema.
+
+### Dopo l'installazione
+
+La cartella clonata **non serve piu**. Tutti i file di esecuzione
+sono stati copiati sotto la tua home:
+
+- `~/.local/bin/radio-scrobbler`
+- `~/.config/systemd/user/radio-scrobbler.service`
+- `~/.config/radio-scrobbler/config.json`
+
+Puoi eliminare tranquillamente la cartella clonata (tienila solo se
+in futuro vuoi usare `./uninstall.sh` oppure fare `git pull` per gli
+aggiornamenti):
+
+```bash
+cd ~ && rm -rf radio-plus-plus-listenbrainz-scrobbler
+```
+
+Tutti i comandi riportati sotto (`radio-scrobbler`, `journalctl`,
+`systemctl --user`) funzionano da **qualunque terminale, in
+qualunque directory**: `~/.local/bin` e gia nel `PATH` sui profili
+standard Debian/Ubuntu. Se dopo l'installazione `radio-scrobbler
+--version` risponde "command not found", apri un nuovo terminale
+(oppure esegui `source ~/.profile`) e riprova.
 
 ## Disinstallazione
 
@@ -79,13 +106,22 @@ eliminare anche le directory di configurazione e di log.
 
 ## Uso
 
+Tutti i comandi si lanciano da **qualunque terminale** (non serve
+spostarsi in alcuna directory):
+
 ```bash
 radio-scrobbler --about     # autore, licenza, link ai repo
 radio-scrobbler --version
 radio-scrobbler --check     # diagnostica configurazione e MPRIS
+
+systemctl --user status radio-scrobbler    # stato attuale
+systemctl --user restart radio-scrobbler   # applica modifiche config
+systemctl --user stop radio-scrobbler
+systemctl --user start radio-scrobbler
 ```
 
-Avvia l'applet, premi play su una stazione e segui i log:
+Avvia l'applet, premi play su una stazione e segui i log (anche
+questo da qualunque terminale):
 
 ```bash
 journalctl --user -u radio-scrobbler -f
