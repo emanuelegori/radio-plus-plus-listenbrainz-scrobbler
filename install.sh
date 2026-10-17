@@ -118,13 +118,24 @@ systemctl --user --no-pager --quiet is-active radio-scrobbler.service \
     || warn "Service not active yet. Check: journalctl --user -u radio-scrobbler -n 30"
 
 echo
-ok "Install done."
+ok "Install done. The service is already running."
 echo
-echo "Useful commands:"
+echo "You can close this terminal, or 'cd' anywhere else: the folder"
+echo "you cloned into (\"$(basename "$SCRIPT_DIR")\") is no longer needed."
+echo "Keep it only if you plan to run './uninstall.sh' or 'git pull'"
+echo "for future updates; otherwise 'cd ~ && rm -rf \"$SCRIPT_DIR\"' is safe."
+echo
+echo "All the commands below work from ANY terminal, in ANY directory:"
+echo
 echo "  radio-scrobbler --about"
 echo "  radio-scrobbler --check"
 echo "  journalctl --user -u radio-scrobbler -f"
+echo "  systemctl --user status radio-scrobbler"
 echo "  systemctl --user restart radio-scrobbler"
 echo
 echo "Config:  $CFG_FILE"
 echo "Log:     $HOME/.cache/radio-scrobbler/scrobbler.log"
+echo
+echo "If 'radio-scrobbler --version' returns 'command not found', open"
+echo "a new terminal (or run: source ~/.profile) so that ~/.local/bin"
+echo "is on PATH."

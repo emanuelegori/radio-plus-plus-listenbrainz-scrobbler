@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README: added an "Update" section explaining that `install.sh` is
   idempotent (skips installed packages, overwrites binary/unit,
   preserves config and token, restarts the service).
+- `install.sh`: expanded the final message. Explicitly states that the
+  service is already running, that the cloned folder is no longer
+  needed (with the ready-to-run `cd ~ && rm -rf` command including
+  the actual path), that all commands work from any terminal, and
+  how to fix a "command not found" if `~/.local/bin` is not yet on
+  `PATH`.
 
 ## [1.0.0] - 2026-10-17
 
