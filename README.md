@@ -1,7 +1,5 @@
 # radio-plus-plus-listenbrainz-scrobbler
 
-[Italiano](./README.it-IT.md) • **English**
-
 ListenBrainz scrobbler for the [Radio++ Cinnamon applet](https://cinnamon-spices.linuxmint.com/applets/view/280)
 (`radio@driglu4it`). Runs as a `systemd --user` service, reads the ICY
 metadata exposed by `mpv` through MPRIS, enriches with MusicBrainz when
