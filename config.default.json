@@ -14,9 +14,13 @@
     " spot",
     "jingle",
     "news",
+    "news update",
+    "news bulletin",
+    "news report",
     "notiziario",
     "agenzia giornalistica",
     "giornale radio",
+    "tgcom",
     "meteo",
     "traffico",
     "oroscopo",
@@ -24,7 +28,9 @@
     " promo",
     "sigla",
     "stacco",
-    "segnale orario"
+    "segnale orario",
+    "time signal",
+    "station id"
   ],
   "station_names": []
 }
