@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+"""Scrobbles the Radio++ Cinnamon applet (mpv MPRIS) to ListenBrainz, enriching with MusicBrainz."""
+
+import argparse
+import json
+import logging
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import requests
+
+__version__ = "1.0.0"
+__author__ = "Emanuele Gori"
+__license__ = "GPL-3.0-or-later"
+__repo_forgejo__ = "https://git.emanuelegori.uno/emanuelegori/radio-plus-plus-listenbrainz-scrobbler"
+__repo_github__ = "https://github.com/emanuelegori/radio-plus-plus-listenbrainz-scrobbler"
+
+CONFIG_PATH = Path.home() / ".config/radio-scrobbler/config.json"
+APPLET_CONFIG = Path.home() / ".config/cinnamon/spices/radio@driglu4it/radio@driglu4it.json"
+CACHE_DIR = Path.home() / ".cache/radio-scrobbler"
+LOG_PATH = CACHE_DIR / "scrobbler.log"
+
+LB_API = "https://api.listenbrainz.org/1/submit-listens"
+MB_API = "https://musicbrainz.org/ws/2/recording/"
+
+DEFAULT_CONFIG = {
+    "listenbrainz_token": "",
+    "poll_interval_s": 10,
+    "scrobble_after_s": 60,
+    "min_title_length": 3,
+    "require_separator": True,
+    "mb_min_score": 90,
+    "user_agent": f"radio-scrobbler/{__version__} (+{__repo_forgejo__})",
+    "use_applet_stations": True,
+    "blacklist_substrings": [
+        "pubblicit", "advertisement", "spot ", " spot", "jingle",
+        "news", "notiziario", "meteo", "traffico", "oroscopo",
+        "promo ", " promo", "sigla", "stacco"
+    ],
+    "station_names": []
+}
+
+_STATION_SEPS = r"[-|•·:/,]"
+_applet_cache = {"mtime": 0.0, "stations": []}
+
+
+def about():
+    print(f"radio-scrobbler {__version__}")
+    print(f"Author:   {__author__}")
+    print(f"License:  {__license__}")
+    print(f"Forgejo:  {__repo_forgejo__}")
+    print(f"GitHub:   {__repo_github__}")
+
+
+def load_config():
+    if not CONFIG_PATH.exists():
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_PATH.write_text(
+            json.dumps(DEFAULT_CONFIG, indent=2, ensure_ascii=False)
+        )
+        print(f"Config created at {CONFIG_PATH}: set listenbrainz_token and relaunch.")
+        sys.exit(1)
+    user_cfg = json.loads(CONFIG_PATH.read_text())
+    cfg = {**DEFAULT_CONFIG, **user_cfg}
+    if not cfg["listenbrainz_token"]:
+        print(f"Missing listenbrainz_token in {CONFIG_PATH}")
+        sys.exit(1)
+    return cfg
+
+
+def get_applet_stations():
+    try:
+        st = APPLET_CONFIG.stat()
+    except OSError:
+        return _applet_cache["stations"]
+    if st.st_mtime == _applet_cache["mtime"]:
+        return _applet_cache["stations"]
+    try:
+        data = json.loads(APPLET_CONFIG.read_text())
+        tree = data.get("tree", {}).get("value", []) or []
+        names = [s["name"].strip() for s in tree if isinstance(s, dict) and s.get("name", "").strip()]
+        if names != _applet_cache["stations"]:
+            logging.info(f"Applet stations loaded: {len(names)}")
+        _applet_cache["stations"] = names
+        _applet_cache["mtime"] = st.st_mtime
+    except Exception as e:
+        logging.warning(f"Reading applet stations failed: {e}")
+    return _applet_cache["stations"]
+
+
+def effective_stations(cfg):
+    stations = list(cfg.get("station_names", []) or [])
+    if cfg.get("use_applet_stations", True):
+        stations.extend(get_applet_stations())
+    return list(dict.fromkeys(stations))
+
+
+def strip_stations(text, stations):
+    if not text:
+        return text
+    for s in stations:
+        esc = re.escape(s)
+        text = re.sub(rf"\s*{_STATION_SEPS}\s*{esc}\s*$", "", text, flags=re.IGNORECASE)
+        text = re.sub(rf"^\s*{esc}\s*{_STATION_SEPS}\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(rf"\(\s*{esc}\s*\)", "", text, flags=re.IGNORECASE)
+        text = re.sub(rf"^\s*{esc}\s*$", "", text, flags=re.IGNORECASE)
+    return text.strip(" -|•·:/,\t")
+
+
+def read_mpris(cfg):
+    try:
+        out = subprocess.run(
+            ["playerctl", "--player=mpv", "metadata",
+             "--format", "{{artist}}\t{{title}}\t{{status}}"],
+            capture_output=True, text=True, timeout=3
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return None
+    if out.returncode != 0:
+        return None
+    parts = out.stdout.rstrip("\n").split("\t")
+    if len(parts) != 3:
+        return None
+    artist, title, status = parts
+    if status.strip() != "Playing":
+        return None
+    artist, title = artist.strip(), title.strip()
+    stations = effective_stations(cfg)
+    artist = strip_stations(artist, stations)
+    title = strip_stations(title, stations)
+    if not artist and " - " in title:
+        artist, title = [p.strip() for p in title.split(" - ", 1)]
+        artist = strip_stations(artist, stations)
+        title = strip_stations(title, stations)
+    return artist, title
+
+
+def is_valid_track(artist, title, cfg):
+    if not title or len(title) < cfg["min_title_length"]:
+        return False
+    if cfg["require_separator"] and not artist:
+        return False
+    text = f"{artist} {title}".lower()
+    for word in cfg["blacklist_substrings"]:
+        if word.lower() in text:
+            return False
+    for station in effective_stations(cfg):
+        if station.lower() == text.strip():
+            return False
+    if re.fullmatch(r"[\W\d_]+", title):
+        return False
+    return True
+
+
+def lookup_mb(artist, title, cfg):
+    try:
+        query = f'artist:"{artist}" AND recording:"{title}"'
+        r = requests.get(
+            MB_API,
+            params={"query": query, "fmt": "json", "limit": 1},
+            headers={"User-Agent": cfg["user_agent"]},
+            timeout=6
+        )
+        r.raise_for_status()
+        recs = r.json().get("recordings") or []
+        if not recs:
+            return None
+        rec = recs[0]
+        if rec.get("score", 0) < cfg["mb_min_score"]:
+            return None
+        info = {"recording_mbid": rec["id"]}
+        mbids = [
+            a["artist"]["id"]
+            for a in rec.get("artist-credit", [])
+            if isinstance(a, dict) and "artist" in a
+        ]
+        if mbids:
+            info["artist_mbids"] = mbids
+        releases = rec.get("releases") or []
+        if releases:
+            info["release_mbid"] = releases[0]["id"]
+        return info
+    except Exception as e:
+        logging.warning(f"MB lookup failed: {e}")
+        return None
+
+
+def submit(cfg, artist, title, listen_type, listened_at=None, mb=None):
+    track_meta = {
+        "artist_name": artist,
+        "track_name": title,
+        "additional_info": {
+            "submission_client": "radio-scrobbler",
+            "submission_client_version": __version__,
+            "media_player": "mpv",
+            "music_service_name": "radio"
+        }
+    }
+    if mb:
+        track_meta["additional_info"].update(mb)
+    item = {"track_metadata": track_meta}
+    if listen_type == "single":
+        item["listened_at"] = listened_at or int(time.time())
+    payload = {"listen_type": listen_type, "payload": [item]}
+    r = requests.post(
+        LB_API,
+        json=payload,
+        headers={"Authorization": f"Token {cfg['listenbrainz_token']}"},
+        timeout=10
+    )
+    r.raise_for_status()
+
+
+def empty_state():
+    return {
+        "key": None,
+        "started_at": None,
+        "scrobbled": False,
+        "now_playing": False,
+        "mb": None,
+        "valid": False
+    }
+
+
+def check():
+    print(f"Config path: {CONFIG_PATH}")
+    print(f"  exists:  {CONFIG_PATH.exists()}")
+    if CONFIG_PATH.exists():
+        cfg = json.loads(CONFIG_PATH.read_text())
+        print(f"  token:   {'set' if cfg.get('listenbrainz_token') else 'MISSING'}")
+    print(f"Applet config: {APPLET_CONFIG}")
+    print(f"  exists:  {APPLET_CONFIG.exists()}")
+    if APPLET_CONFIG.exists():
+        d = json.loads(APPLET_CONFIG.read_text())
+        tree = d.get("tree", {}).get("value", []) or []
+        print(f"  stations: {len(tree)}")
+    try:
+        out = subprocess.run(
+            ["playerctl", "--player=mpv", "metadata",
+             "--format", "{{artist}}\t{{title}}\t{{status}}"],
+            capture_output=True, text=True, timeout=3
+        )
+        if out.returncode == 0:
+            print(f"MPRIS mpv: {out.stdout.strip() or '(empty)'}")
+        else:
+            print("MPRIS mpv: not running")
+    except FileNotFoundError:
+        print("MPRIS mpv: playerctl not installed")
+
+
+def run():
+    cfg = load_config()
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        handlers=[logging.FileHandler(LOG_PATH), logging.StreamHandler()]
+    )
+    logging.info(f"Starting radio-scrobbler {__version__}")
+    state = empty_state()
+    while True:
+        try:
+            meta = read_mpris(cfg)
+            if meta is None:
+                if state["key"] is not None:
+                    logging.info("mpv not Playing: state reset")
+                state = empty_state()
+            else:
+                artist, title = meta
+                key = (artist, title)
+                if key != state["key"]:
+                    state = empty_state()
+                    state["key"] = key
+                    state["started_at"] = time.time()
+                    state["valid"] = is_valid_track(artist, title, cfg)
+                    if state["valid"]:
+                        logging.info(f"New track: {artist} — {title}")
+                        state["mb"] = lookup_mb(artist, title, cfg)
+                        if state["mb"]:
+                            logging.info(f"MB match: {state['mb'].get('recording_mbid')}")
+                        try:
+                            submit(cfg, artist, title, "playing_now", mb=state["mb"])
+                            state["now_playing"] = True
+                            logging.info(f"Now playing sent: {artist} — {title}")
+                        except Exception as e:
+                            logging.warning(f"playing_now failed: {e}")
+                    else:
+                        logging.info(f"Filtered: {artist} | {title}")
+                elif (state["valid"]
+                      and not state["scrobbled"]
+                      and time.time() - state["started_at"] >= cfg["scrobble_after_s"]):
+                    try:
+                        submit(cfg, artist, title, "single",
+                               listened_at=int(state["started_at"]),
+                               mb=state["mb"])
+                        state["scrobbled"] = True
+                        logging.info(f"Scrobbled: {artist} — {title}")
+                    except Exception as e:
+                        logging.warning(f"scrobble failed: {e}")
+        except Exception:
+            logging.exception("Loop error")
+        time.sleep(cfg["poll_interval_s"])
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="radio-scrobbler",
+        description="ListenBrainz scrobbler for the Cinnamon Radio++ applet"
+    )
+    parser.add_argument("--version", action="version", version=f"radio-scrobbler {__version__}")
+    parser.add_argument("--about", action="store_true", help="show author, license, repo URLs")
+    parser.add_argument("--check", action="store_true", help="print config and MPRIS diagnostics then exit")
+    args = parser.parse_args()
+    if args.about:
+        about()
+        return
+    if args.check:
+        check()
+        return
+    run()
+
+
+if __name__ == "__main__":
+    main()

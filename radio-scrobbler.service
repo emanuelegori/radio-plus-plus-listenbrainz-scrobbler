@@ -1,0 +1,13 @@
+[Unit]
+Description=Radio++ (mpv MPRIS) ListenBrainz scrobbler
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/radio-scrobbler
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
