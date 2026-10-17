@@ -15,13 +15,16 @@
     "jingle",
     "news",
     "notiziario",
+    "agenzia giornalistica",
+    "giornale radio",
     "meteo",
     "traffico",
     "oroscopo",
     "promo ",
     " promo",
     "sigla",
-    "stacco"
+    "stacco",
+    "segnale orario"
   ],
   "station_names": []
 }

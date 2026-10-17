@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Default `blacklist_substrings` expanded with `agenzia
+  giornalistica`, `giornale radio`, `segnale orario`. Rationale:
+  after the parser fix below, broadcasts like
+  `AGENZIA GIORNALISTICA-TGCOM` are now parsed as
+  artist/title and would be scrobbled as if they were music;
+  the formulas above are standard Italian radio news markers,
+  so they are safe to block at the default level. Station-brand
+  names (e.g. `tgcom`) are intentionally NOT added to the
+  default: they should go in the user's own `blacklist_substrings`
+  via `~/.config/radio-scrobbler/config.json`.
+  Note: existing installations keep their current config
+  unchanged (the installer preserves `config.json`); to pick up
+  the new default entries, add them manually to your config and
+  `systemctl --user restart radio-scrobbler`.
+
 ### Fixed
 
 - `radio-scrobbler`: parse ICY titles in the form `ARTIST-TITLE`

@@ -37,8 +37,9 @@ DEFAULT_CONFIG = {
     "use_applet_stations": True,
     "blacklist_substrings": [
         "pubblicit", "advertisement", "spot ", " spot", "jingle",
-        "news", "notiziario", "meteo", "traffico", "oroscopo",
-        "promo ", " promo", "sigla", "stacco"
+        "news", "notiziario", "agenzia giornalistica", "giornale radio",
+        "meteo", "traffico", "oroscopo",
+        "promo ", " promo", "sigla", "stacco", "segnale orario"
     ],
     "station_names": []
 }
