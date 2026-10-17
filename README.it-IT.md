@@ -1,7 +1,5 @@
 # radio-plus-plus-listenbrainz-scrobbler
 
-**Italiano** • [English](./README.md)
-
 Scrobbler verso ListenBrainz per l'applet Cinnamon
 [Radio++](https://cinnamon-spices.linuxmint.com/applets/view/280)
 (`radio@driglu4it`). Gira come servizio `systemd --user`, legge i
